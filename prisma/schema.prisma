@@ -148,3 +148,15 @@ model ExchangeRate {
   source          String   @default("SBP")
   updatedAt       DateTime @updatedAt
 }
+
+model AgencySettings {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String   @default("AL-Usama-Import and Export System")
+  legalName       String   @default("AL-Usama Trading Co. (Pvt) Ltd")
+  ntn             String   @default("1234567-8")
+  strn            String   @default("0987654321")
+  address         String   @default("Suite 401, Trade Centre, I.I. Chundrigar Rd, Karachi 74000")
+  phone           String   @default("+92 21 3263 4500")
+  email           String   @default("ops@al-usama.com")
+  updatedAt       DateTime @updatedAt
+}

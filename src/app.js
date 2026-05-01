@@ -16,6 +16,10 @@ const orderRoutes = require('./routes/orderRoutes');
 const financeRoutes = require('./routes/financeRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const customsRoutes = require('./routes/customsRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 // Middleware
 app.use(cors());
@@ -31,7 +35,10 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/admin/audit-log', auditRoutes);
+app.use('/api/customs', customsRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
