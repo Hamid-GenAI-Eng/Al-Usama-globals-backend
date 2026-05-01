@@ -20,7 +20,7 @@ const createOrder = async (req, res) => {
       data: {
         orderNumber,
         type,
-        contactId: parseInt(contactId),
+        contactId,
         currency: currency || 'PKR',
         status: status || 'DRAFT',
         totalAmount,

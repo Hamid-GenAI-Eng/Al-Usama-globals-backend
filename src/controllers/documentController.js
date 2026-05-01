@@ -31,7 +31,7 @@ const uploadDocument = async (req, res) => {
         type: type || 'Other',
         fileUrl: result.secure_url,
         cloudinaryId: result.public_id,
-        shipmentId: shipmentId ? parseInt(shipmentId) : null,
+        shipmentId: shipmentId || null,
         userId: req.user.id
       }
     });

@@ -16,7 +16,7 @@ const auditLog = (module) => {
           try {
             await prisma.auditLog.create({
               data: {
-                userId: req.user ? req.user.id : 0, // 0 for system/unauth
+                userId: req.user ? req.user.id : null,
                 action: req.method,
                 target: req.originalUrl,
                 module: module,

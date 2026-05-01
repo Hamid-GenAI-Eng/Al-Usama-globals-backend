@@ -6,12 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   email           String   @unique
   password        String
   fullName        String
@@ -32,7 +32,7 @@ enum Role {
 }
 
 model Shipment {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   shipmentId      String   @unique
   origin          String
   destination     String
@@ -42,7 +42,7 @@ model Shipment {
   status          ShipmentStatus @default(PENDING)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  userId          Int
+  userId          String   @db.ObjectId
   user            User     @relation(fields: [userId], references: [id])
   documents       Document[]
   statusLogs      ShipmentStatusLog[]
@@ -58,8 +58,8 @@ enum ShipmentStatus {
 }
 
 model ShipmentStatusLog {
-  id              Int      @id @default(autoincrement())
-  shipmentId      Int
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  shipmentId      String   @db.ObjectId
   shipment        Shipment @relation(fields: [shipmentId], references: [id])
   status          ShipmentStatus
   description     String?
@@ -67,23 +67,23 @@ model ShipmentStatusLog {
 }
 
 model Document {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
   type            String
   fileUrl         String
   cloudinaryId    String
-  shipmentId      Int?
+  shipmentId      String?  @db.ObjectId
   shipment        Shipment? @relation(fields: [shipmentId], references: [id])
-  userId          Int
+  userId          String   @db.ObjectId
   user            User      @relation(fields: [userId], references: [id])
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
 
 model AuditLog {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id])
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String?  @db.ObjectId
+  user            User?    @relation(fields: [userId], references: [id])
   action          String
   target          String
   module          String
@@ -92,7 +92,7 @@ model AuditLog {
 }
 
 model Contact {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
   type            ContactType
   email           String?
@@ -111,14 +111,14 @@ enum ContactType {
 }
 
 model Order {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   orderNumber     String   @unique
   type            OrderType
   date            DateTime @default(now())
   status          String   @default("DRAFT")
   totalAmount     Float    @default(0)
   currency        String   @default("PKR")
-  contactId       Int
+  contactId       String   @db.ObjectId
   contact         Contact  @relation(fields: [contactId], references: [id])
   items           OrderItem[]
   createdAt       DateTime @default(now())
@@ -126,8 +126,8 @@ model Order {
 }
 
 model OrderItem {
-  id              Int      @id @default(autoincrement())
-  orderId         Int
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId         String   @db.ObjectId
   order           Order    @relation(fields: [orderId], references: [id])
   hsCode          String?
   description     String
@@ -142,7 +142,7 @@ enum OrderType {
 }
 
 model ExchangeRate {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   currencyCode    String   @unique
   rateToPkr       Float
   source          String   @default("SBP")

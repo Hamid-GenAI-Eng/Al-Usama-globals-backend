@@ -84,7 +84,7 @@ const getShipments = async (req, res) => {
 const getShipmentById = async (req, res) => {
   try {
     const shipment = await prisma.shipment.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id: req.params.id },
       include: {
         user: { select: { fullName: true, email: true } },
         documents: true,
@@ -116,7 +116,7 @@ const updateShipmentStatus = async (req, res) => {
 
   try {
     const shipment = await prisma.shipment.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: req.params.id },
       data: { status }
     });
 
