@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'https://al-usama-globals-backend.vercel.app';
 let token = '';
 
 const test = async () => {
