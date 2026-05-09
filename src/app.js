@@ -4,8 +4,28 @@ const cors = require('cors');
 
 const app = express();
 
-// Import Routes
+console.log('INIT: Loading routes...');
+// Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to AL-Usama-Import and Export System API' });
+});
+
 const healthRoutes = require('./routes/health');
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request Logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
+app.use('/health', healthRoutes);
+
+console.log('INIT: Loading business routes...');
 const authRoutes = require('./routes/authRoutes');
 const shipmentRoutes = require('./routes/shipmentRoutes');
 const documentRoutes = require('./routes/documentRoutes');
@@ -19,19 +39,6 @@ const reportRoutes = require('./routes/reportRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Request Logger
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
-
-// Routes
-app.use('/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/shipments', shipmentRoutes);
 app.use('/api/documents', documentRoutes);
@@ -43,11 +50,7 @@ app.use('/api/customs', customsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
-
-// Basic Route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to AL-Usama-Import and Export System API' });
-});
+console.log('INIT: App routes configured.');
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
