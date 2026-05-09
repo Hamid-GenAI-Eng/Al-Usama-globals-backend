@@ -4,6 +4,12 @@ const cors = require('cors');
 
 const app = express();
 
+if (!process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET is not defined in environment variables.');
+  // We don't exit(1) here to allow the health check to still run, 
+  // but we log it clearly for Vercel logs.
+}
+
 console.log('INIT: Loading routes...');
 // Routes
 app.get('/', (req, res) => {

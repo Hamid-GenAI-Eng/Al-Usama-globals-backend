@@ -17,17 +17,21 @@ const generateToken = (id) => {
  */
 const registerUser = async (req, res) => {
   const { email, password, fullName, role } = req.body;
+  console.log(`AUTH: Attempting registration for ${email}`);
 
   try {
     const userExists = await prisma.user.findUnique({ where: { email } });
 
     if (userExists) {
+      console.log(`AUTH: Registration failed - user already exists: ${email}`);
       return errorResponse(res, 'User already exists', 400);
     }
 
+    console.log(`AUTH: Hashing password for ${email}`);
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    console.log(`AUTH: Creating user record for ${email}`);
     const user = await prisma.user.create({
       data: {
         email,
@@ -38,6 +42,7 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      console.log(`AUTH: User registered successfully: ${email}`);
       return successResponse(res, {
         id: user.id,
         fullName: user.fullName,
@@ -47,8 +52,9 @@ const registerUser = async (req, res) => {
       }, 'User registered successfully', 201);
     }
   } catch (error) {
+    console.error('AUTH: Crash during registration process:');
     console.error(error);
-    return errorResponse(res, 'Server error during registration');
+    return errorResponse(res, `Server error: ${error.message}`);
   }
 };
 
@@ -59,11 +65,19 @@ const registerUser = async (req, res) => {
  */
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  console.log(`AUTH: Attempting login for ${email}`);
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.log(`AUTH: User not found: ${email}`);
+      return errorResponse(res, 'Invalid email or password', 401);
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      console.log(`AUTH: Login successful for ${email}`);
       return successResponse(res, {
         id: user.id,
         fullName: user.fullName,
@@ -72,11 +86,13 @@ const loginUser = async (req, res) => {
         token: generateToken(user.id),
       }, 'Login successful');
     } else {
+      console.log(`AUTH: Password mismatch for ${email}`);
       return errorResponse(res, 'Invalid email or password', 401);
     }
   } catch (error) {
+    console.error('AUTH: Crash during login process:');
     console.error(error);
-    return errorResponse(res, 'Server error during login');
+    return errorResponse(res, `Server error: ${error.message}`);
   }
 };
 
