@@ -24,6 +24,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request Logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/health', healthRoutes);
 app.use('/api/auth', authRoutes);
@@ -45,8 +51,15 @@ app.get('/', (req, res) => {
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error(`[${new Date().toISOString()}] ERROR: ${err.message}`);
+  if (err.stack) console.error(err.stack);
+  
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({ 
+    success: false,
+    message: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 module.exports = app;

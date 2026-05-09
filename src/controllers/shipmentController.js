@@ -52,8 +52,8 @@ const getShipments = async (req, res) => {
 
     const where = {};
     if (status) where.status = status;
-    if (origin) where.origin = { contains: origin, mode: 'insensitive' };
-    if (destination) where.destination = { contains: destination, mode: 'insensitive' };
+    if (origin) where.origin = { contains: origin };
+    if (destination) where.destination = { contains: destination };
 
     // If client, only show their shipments (assuming users are linked to shipments)
     if (req.user.role === 'CLIENT') {
