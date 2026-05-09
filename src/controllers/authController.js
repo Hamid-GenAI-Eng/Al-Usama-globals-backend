@@ -16,7 +16,7 @@ const generateToken = (id) => {
  * @access  Public
  */
 const registerUser = async (req, res) => {
-  const { email, password, fullName, role } = req.body;
+  const { email, password, fullName, role, businessName } = req.body;
   console.log(`AUTH: Attempting registration for ${email}`);
 
   try {
@@ -40,6 +40,22 @@ const registerUser = async (req, res) => {
         role: role || 'TRADE_AGENT'
       },
     });
+
+    // If this is a MASTER_ADMIN, update the global Agency settings with the business name
+    if (user && user.role === 'MASTER_ADMIN' && businessName) {
+      console.log(`AUTH: Updating agency settings with business name: ${businessName}`);
+      const existingSettings = await prisma.agencySettings.findFirst();
+      if (existingSettings) {
+        await prisma.agencySettings.update({
+          where: { id: existingSettings.id },
+          data: { name: businessName, email: email }
+        });
+      } else {
+        await prisma.agencySettings.create({
+          data: { name: businessName, email: email }
+        });
+      }
+    }
 
     if (user) {
       console.log(`AUTH: User registered successfully: ${email}`);
@@ -105,8 +121,37 @@ const getMe = async (req, res) => {
   return successResponse(res, req.user, 'User profile retrieved');
 };
 
+/**
+ * @desc    Update user profile
+ * @route   PATCH /api/auth/me
+ * @access  Private
+ */
+const updateMe = async (req, res) => {
+  const { fullName } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { fullName },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isActive: true
+      }
+    });
+
+    return successResponse(res, updatedUser, 'Profile updated successfully');
+  } catch (error) {
+    console.error(error);
+    return errorResponse(res, 'Error updating profile');
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
-  getMe
+  getMe,
+  updateMe
 };
