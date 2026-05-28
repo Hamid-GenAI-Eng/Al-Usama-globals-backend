@@ -174,8 +174,8 @@ const getDashboardSummary = async (req, res) => {
     const productCategories = totalCategoriesCount > 0 
       ? Object.keys(categoryMap).map(name => ({
           name,
-          value: Math.round((categoryMap[name as keyof typeof categoryMap].count / totalCategoriesCount) * 100),
-          color: categoryMap[name as keyof typeof categoryMap].color
+          value: Math.round((categoryMap[name].count / totalCategoriesCount) * 100),
+          color: categoryMap[name].color
         }))
       : [];
 

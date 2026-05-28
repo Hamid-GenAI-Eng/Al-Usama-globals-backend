@@ -14,6 +14,17 @@ const createContact = async (req, res) => {
       data: { name, type, email, phone, address, country, notes }
     });
 
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: `added CRM Contact ${name}`,
+        target: type,
+        module: 'CRM',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
     return successResponse(res, contact, 'Contact added to CRM', 201);
   } catch (error) {
     console.error(error);

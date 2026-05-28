@@ -32,6 +32,18 @@ const updateExchangeRate = async (req, res) => {
       update: { rateToPkr: parseFloat(rateToPkr), source: source || 'Manual' },
       create: { currencyCode, rateToPkr: parseFloat(rateToPkr), source: source || 'Manual' }
     });
+
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: `updated exchange rate for ${currencyCode} to ${rateToPkr}`,
+        target: currencyCode,
+        module: 'Finance',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
     return successResponse(res, rate, `Rate for ${currencyCode} updated`);
   } catch (error) {
     console.error(error);

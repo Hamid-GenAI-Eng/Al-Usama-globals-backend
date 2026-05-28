@@ -37,6 +37,17 @@ const createOrder = async (req, res) => {
       include: { items: true, contact: true }
     });
 
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: `created ${type.toLowerCase()} order PO-${orderNumber}`,
+        target: orderNumber,
+        module: 'Orders',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
     return successResponse(res, order, 'Order created successfully', 201);
   } catch (error) {
     console.error(error);
