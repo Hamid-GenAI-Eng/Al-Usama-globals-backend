@@ -36,38 +36,20 @@ const getDashboardSummary = async (req, res) => {
       include: { user: { select: { fullName: true } } }
     });
 
-    const defaultActivities = [
-      { who: "System", what: "initialized secure architectural ledger", target: "MongoDB Atlas", time: "10m ago" },
-      { who: "System", what: "loaded FBR PCT Customs Tariffs", target: "TariffDB", time: "30m ago" },
-      { who: "System", what: "verified Cloudinary asset delivery node", target: "Cloud CDN", time: "1h ago" },
-      { who: "System", what: "established direct master routing desk", target: "Al-Usama Hub", time: "2h ago" }
-    ];
-
-    const recentActivity = recentActivityLogs.length > 0 
-      ? recentActivityLogs.map(log => {
-          const timeString = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          return {
-            who: log.user?.fullName || 'System',
-            what: log.action,
-            target: log.target || log.module,
-            time: timeString
-          };
-        })
-      : defaultActivities;
+    const recentActivity = recentActivityLogs.map(log => {
+      const timeString = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return {
+        who: log.user?.fullName || 'System',
+        what: log.action,
+        target: log.target || log.module,
+        time: timeString
+      };
+    });
 
     // 4. Shipment Volume (imports vs exports trend)
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const volumeData = [];
     
-    const defaultVolumeData = [
-      { month: "Nov", imports: 18, exports: 22, importsCount: 18, exportsCount: 22 },
-      { month: "Dec", imports: 24, exports: 28, importsCount: 24, exportsCount: 28 },
-      { month: "Jan", imports: 32, exports: 26, importsCount: 32, exportsCount: 26 },
-      { month: "Feb", imports: 28, exports: 31, importsCount: 28, exportsCount: 31 },
-      { month: "Mar", imports: 36, exports: 34, importsCount: 36, exportsCount: 34 },
-      { month: "Apr", imports: 42, exports: 38, importsCount: 42, exportsCount: 38 },
-    ];
-
     const allShipmentsForStats = await prisma.shipment.findMany({
       select: {
         createdAt: true,
@@ -76,68 +58,55 @@ const getDashboardSummary = async (req, res) => {
       }
     });
 
-    if (allShipmentsForStats.length > 0) {
-      const monthlyCounts = {};
-      
-      // Seed last 6 months
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const mName = monthNames[d.getMonth()];
-        const year = d.getFullYear();
-        const key = `${mName} ${year}`;
-        monthlyCounts[key] = { month: mName, imports: 0, exports: 0, importsCount: 0, exportsCount: 0 };
-      }
-
-      allShipmentsForStats.forEach(shp => {
-        const date = new Date(shp.createdAt);
-        const mName = monthNames[date.getMonth()];
-        const year = date.getFullYear();
-        const key = `${mName} ${year}`;
-        
-        if (monthlyCounts[key]) {
-          const destLower = shp.destination.toLowerCase();
-          const isImport = destLower.includes('pakistan') || 
-                           destLower.includes('karachi') || 
-                           destLower.includes('pk') ||
-                           destLower.includes('port qasim');
-          if (isImport) {
-            monthlyCounts[key].imports += 1;
-            monthlyCounts[key].importsCount += 1;
-          } else {
-            monthlyCounts[key].exports += 1;
-            monthlyCounts[key].exportsCount += 1;
-          }
-        }
-      });
-
-      Object.keys(monthlyCounts).forEach(k => {
-        volumeData.push(monthlyCounts[k]);
-      });
-    } else {
-      volumeData.push(...defaultVolumeData);
+    const monthlyCounts = {};
+    
+    // Seed last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const mName = monthNames[d.getMonth()];
+      const year = d.getFullYear();
+      const key = `${mName} ${year}`;
+      monthlyCounts[key] = { month: mName, imports: 0, exports: 0, importsCount: 0, exportsCount: 0 };
     }
 
-    // 5. Top Trade Routes
-    const defaultRoutes = [
-      { route: "Shanghai → Karachi", volume: 142, value: "$2.4M" },
-      { route: "Hamburg → Karachi", volume: 86, value: "$1.8M" },
-      { route: "Karachi → Dubai", volume: 124, value: "$1.6M" },
-      { route: "Karachi → Jeddah", volume: 78, value: "$980K" }
-    ];
+    allShipmentsForStats.forEach(shp => {
+      const date = new Date(shp.createdAt);
+      const mName = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      const key = `${mName} ${year}`;
+      
+      if (monthlyCounts[key]) {
+        const destLower = shp.destination.toLowerCase();
+        const isImport = destLower.includes('pakistan') || 
+                         destLower.includes('karachi') || 
+                         destLower.includes('pk') ||
+                         destLower.includes('port qasim');
+        if (isImport) {
+          monthlyCounts[key].imports += 1;
+          monthlyCounts[key].importsCount += 1;
+        } else {
+          monthlyCounts[key].exports += 1;
+          monthlyCounts[key].exportsCount += 1;
+        }
+      }
+    });
 
+    Object.keys(monthlyCounts).forEach(k => {
+      volumeData.push(monthlyCounts[k]);
+    });
+
+    // 5. Top Trade Routes
     const routeGroups = await prisma.shipment.groupBy({
       by: ['origin', 'destination'],
       _count: { id: true }
     });
 
-    const topTradeRoutes = routeGroups.length > 0 
-      ? routeGroups.map(g => ({
-          route: `${g.origin} → ${g.destination}`,
-          volume: g._count.id,
-          value: `$${(g._count.id * 145000 / 1000).toFixed(0)}K`
-        })).sort((a, b) => b.volume - a.volume).slice(0, 4)
-      : defaultRoutes;
+    const topTradeRoutes = routeGroups.map(g => ({
+      route: `${g.origin} → ${g.destination}`,
+      volume: g._count.id,
+      value: `$${(g._count.id * 145000 / 1000).toFixed(0)}K`
+    })).sort((a, b) => b.volume - a.volume).slice(0, 4);
 
     // 6. Dynamic Pending Tasks
     const pendingShipments = await prisma.shipment.findMany({
@@ -152,10 +121,10 @@ const getDashboardSummary = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const dynamicTasks = [];
+    const tasks = [];
 
     pendingShipments.forEach(s => {
-      dynamicTasks.push({
+      tasks.push({
         label: `Upload Bill of Lading for ${s.shipmentId}`,
         due: "Today",
         priority: "high"
@@ -163,20 +132,52 @@ const getDashboardSummary = async (req, res) => {
     });
 
     draftOrders.forEach(o => {
-      dynamicTasks.push({
+      tasks.push({
         label: `Review PO-${o.orderNumber} line items`,
         due: "Tomorrow",
         priority: "med"
       });
     });
 
-    const defaultTasks = [
-      { label: "Approve FBR Customs Declaration", due: "Today", priority: "high" },
-      { label: "Verify newly uploaded Bill of Lading", due: "Tomorrow", priority: "med" },
-      { label: "Audit ledger matching line items", due: "2 days ago", priority: "low" }
-    ];
+    // 7. Dynamic Product Categories from Order Items
+    const orderItems = await prisma.orderItem.findMany({
+      select: { description: true }
+    });
 
-    const tasks = dynamicTasks.length > 0 ? dynamicTasks : defaultTasks;
+    const categoryMap = {
+      "Electronics": { count: 0, color: "hsl(217, 91%, 60%)" },
+      "Textiles": { count: 0, color: "hsl(173, 80%, 40%)" },
+      "Machinery": { count: 0, color: "hsl(43, 96%, 56%)" },
+      "Steel": { count: 0, color: "hsl(280, 70%, 60%)" },
+      "Food": { count: 0, color: "hsl(160, 84%, 39%)" }
+    };
+
+    if (orderItems.length > 0) {
+      orderItems.forEach(item => {
+        const desc = (item.description || "").toLowerCase();
+        if (desc.includes('laptop') || desc.includes('phone') || desc.includes('electron') || desc.includes('data')) {
+          categoryMap["Electronics"].count += 1;
+        } else if (desc.includes('fabric') || desc.includes('textile') || desc.includes('cloth') || desc.includes('garment')) {
+          categoryMap["Textiles"].count += 1;
+        } else if (desc.includes('machine') || desc.includes('tool') || desc.includes('equip')) {
+          categoryMap["Machinery"].count += 1;
+        } else if (desc.includes('steel') || desc.includes('iron') || desc.includes('metal')) {
+          categoryMap["Steel"].count += 1;
+        } else {
+          categoryMap["Food"].count += 1;
+        }
+      });
+    }
+
+    const totalCategoriesCount = Object.values(categoryMap).reduce((sum, c) => sum + c.count, 0);
+
+    const productCategories = totalCategoriesCount > 0 
+      ? Object.keys(categoryMap).map(name => ({
+          name,
+          value: Math.round((categoryMap[name as keyof typeof categoryMap].count / totalCategoriesCount) * 100),
+          color: categoryMap[name as keyof typeof categoryMap].color
+        }))
+      : [];
 
     return successResponse(res, {
       stats: {
@@ -190,6 +191,7 @@ const getDashboardSummary = async (req, res) => {
       shipmentVolume: volumeData,
       topTradeRoutes,
       tasks,
+      productCategories,
       reportsCount: 14
     }, 'Analytics summary retrieved');
   } catch (error) {

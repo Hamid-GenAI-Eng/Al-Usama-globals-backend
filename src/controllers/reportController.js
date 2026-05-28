@@ -24,6 +24,23 @@ const getReportsSummary = async (req, res) => {
 
     const revenue = totalRevenueSum._sum.totalAmount || 1420000;
 
+    // Fetch reports dynamically from documents vault where type is Report
+    const reportDocuments = await prisma.document.findMany({
+      where: { type: 'Report' },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { fullName: true } } }
+    });
+
+    const archives = reportDocuments.map(d => ({
+      name: d.name,
+      format: d.fileUrl.endsWith('.xlsx') || d.name.toLowerCase().includes('.xls') ? 'XLSX' : 'PDF',
+      size: '1.2 MB',
+      at: new Date(d.createdAt).toLocaleDateString(),
+      by: d.user?.fullName || 'System',
+      fileUrl: d.fileUrl
+    }));
+
     const summary = {
       shipments: {
         active: activeShipments,
@@ -38,7 +55,8 @@ const getReportsSummary = async (req, res) => {
       customs: {
         compliance: 96
       },
-      reportsCount: 18
+      reportsCount: 18,
+      archives
     };
 
     return successResponse(res, summary, 'Reports summary retrieved successfully');
