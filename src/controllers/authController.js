@@ -32,13 +32,29 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    console.log(`AUTH: Creating user record for ${email}`);
+    // Secure Role Assignment (Zero-Trust):
+    // If a MASTER_ADMIN already exists in the system, any new public signup is strictly forced
+    // to the lowest-privilege CLIENT role to prevent privilege escalation exploits.
+    let assignedRole = 'CLIENT';
+    const adminExists = await prisma.user.findFirst({
+      where: { role: 'MASTER_ADMIN' }
+    });
+
+    if (!adminExists) {
+      // The very first user registering gets MASTER_ADMIN to configure the portal
+      assignedRole = 'MASTER_ADMIN';
+      console.log(`AUTH: No Master Admin exists. Assigning MASTER_ADMIN role to ${email}`);
+    } else {
+      console.log(`AUTH: Public registration. Assigning CLIENT role to ${email}`);
+    }
+
+    console.log(`AUTH: Creating user record for ${email} with role ${assignedRole}`);
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         fullName,
-        role: role || 'TRADE_AGENT'
+        role: assignedRole
       },
     });
 
