@@ -29,29 +29,43 @@ const lookupHSCode = async (req, res) => {
  * @access  Private
  */
 const calculateDuty = async (req, res) => {
-  const { value, hsCode, currency } = req.body;
+  const { 
+    cifValue = 0, 
+    exchangeRate = 282, 
+    customsDuty = 0, 
+    additionalDuty = 0, 
+    regulatoryDuty = 0, 
+    salesTax = 0, 
+    incomeTax = 0 
+  } = req.body;
 
-  // Simple calculation logic
-  const dutyRate = 0.15; // 15% flat for demo
-  const salesTaxRate = 0.18; // 18% GST
-  
-  const dutyAmount = value * dutyRate;
-  const salesTaxAmount = (value + dutyAmount) * salesTaxRate;
-  const totalTaxes = dutyAmount + salesTaxAmount;
+  try {
+    const cifPkr = cifValue * exchangeRate;
+    const cd = cifPkr * (customsDuty / 100);
+    const ad = cifPkr * (additionalDuty / 100);
+    const rd = cifPkr * (regulatoryDuty / 100);
+    const st = (cifPkr + cd + ad + rd) * (salesTax / 100);
+    const it = (cifPkr + cd + ad + rd) * (incomeTax / 100);
 
-  const result = {
-    assessedValue: value,
-    currency: currency || 'USD',
-    breakdown: [
-      { name: 'Customs Duty (15%)', amount: dutyAmount },
-      { name: 'Sales Tax (18%)', amount: salesTaxAmount },
-      { name: 'Additional Customs Duty', amount: value * 0.02 },
-      { name: 'Income Tax (Advance)', amount: value * 0.05 },
-    ],
-    totalPayable: totalTaxes + (value * 0.07)
-  };
+    const totalDuties = cd + ad + rd + st + it;
+    const totalLandedCost = cifPkr + totalDuties;
 
-  return successResponse(res, result, 'Duty calculation completed');
+    const result = {
+      cifPkr,
+      cd,
+      ad,
+      rd,
+      st,
+      it,
+      totalDuties,
+      totalLandedCost
+    };
+
+    return successResponse(res, result, 'Duty calculation completed successfully');
+  } catch (error) {
+    console.error('Duty Calculation Error:', error);
+    return errorResponse(res, 'Error processing duty calculation');
+  }
 };
 
 module.exports = { lookupHSCode, calculateDuty };
