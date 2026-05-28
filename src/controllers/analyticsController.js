@@ -37,10 +37,10 @@ const getDashboardSummary = async (req, res) => {
     });
 
     const defaultActivities = [
-      { who: "Bilal Ahmed", what: "uploaded Bill of Lading", target: "SHP-2026-1842", time: "5m ago" },
-      { who: "System", what: "cleared customs for", target: "SHP-2026-1840", time: "1h ago" },
-      { who: "Hamza Khan", what: "created Purchase Order", target: "PO-2026-0241", time: "3h ago" },
-      { who: "Captain Usama", what: "invited new user", target: "ahmed@al-usama.com", time: "Yesterday" }
+      { who: "System", what: "initialized secure architectural ledger", target: "MongoDB Atlas", time: "10m ago" },
+      { who: "System", what: "loaded FBR PCT Customs Tariffs", target: "TariffDB", time: "30m ago" },
+      { who: "System", what: "verified Cloudinary asset delivery node", target: "Cloud CDN", time: "1h ago" },
+      { who: "System", what: "established direct master routing desk", target: "Al-Usama Hub", time: "2h ago" }
     ];
 
     const recentActivity = recentActivityLogs.length > 0 
@@ -139,6 +139,45 @@ const getDashboardSummary = async (req, res) => {
         })).sort((a, b) => b.volume - a.volume).slice(0, 4)
       : defaultRoutes;
 
+    // 6. Dynamic Pending Tasks
+    const pendingShipments = await prisma.shipment.findMany({
+      where: { status: 'PENDING' },
+      take: 2,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const draftOrders = await prisma.order.findMany({
+      where: { status: 'DRAFT' },
+      take: 2,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const dynamicTasks = [];
+
+    pendingShipments.forEach(s => {
+      dynamicTasks.push({
+        label: `Upload Bill of Lading for ${s.shipmentId}`,
+        due: "Today",
+        priority: "high"
+      });
+    });
+
+    draftOrders.forEach(o => {
+      dynamicTasks.push({
+        label: `Review PO-${o.orderNumber} line items`,
+        due: "Tomorrow",
+        priority: "med"
+      });
+    });
+
+    const defaultTasks = [
+      { label: "Approve FBR Customs Declaration", due: "Today", priority: "high" },
+      { label: "Verify newly uploaded Bill of Lading", due: "Tomorrow", priority: "med" },
+      { label: "Audit ledger matching line items", due: "2 days ago", priority: "low" }
+    ];
+
+    const tasks = dynamicTasks.length > 0 ? dynamicTasks : defaultTasks;
+
     return successResponse(res, {
       stats: {
         totalShipments,
@@ -150,6 +189,7 @@ const getDashboardSummary = async (req, res) => {
       recentActivity,
       shipmentVolume: volumeData,
       topTradeRoutes,
+      tasks,
       reportsCount: 14
     }, 'Analytics summary retrieved');
   } catch (error) {

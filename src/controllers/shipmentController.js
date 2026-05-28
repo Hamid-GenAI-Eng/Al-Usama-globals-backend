@@ -34,6 +34,17 @@ const createShipment = async (req, res) => {
       }
     });
 
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'created shipment',
+        target: shipmentId,
+        module: 'Shipments',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
     return successResponse(res, shipment, 'Shipment created successfully', 201);
   } catch (error) {
     console.error(error);
@@ -125,6 +136,17 @@ const updateShipmentStatus = async (req, res) => {
         shipmentId: shipment.id,
         status,
         description
+      }
+    });
+
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: `updated shipment status to ${status}`,
+        target: shipment.shipmentId,
+        module: 'Shipments',
+        ipAddress: req.ip || '0.0.0.0'
       }
     });
 

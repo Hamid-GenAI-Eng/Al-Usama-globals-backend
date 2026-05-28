@@ -36,6 +36,17 @@ const uploadDocument = async (req, res) => {
       }
     });
 
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'uploaded Document',
+        target: document.name,
+        module: 'Documents',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
     return successResponse(res, document, 'Document uploaded and secured in vault', 201);
   } catch (error) {
     console.error(error);

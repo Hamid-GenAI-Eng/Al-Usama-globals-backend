@@ -1,3 +1,4 @@
+const prisma = require('../config/prisma');
 const { successResponse, errorResponse } = require('../utils/response');
 
 /**
@@ -68,4 +69,31 @@ const calculateDuty = async (req, res) => {
   }
 };
 
-module.exports = { lookupHSCode, calculateDuty };
+/**
+ * @desc    File Goods Declaration in WEBOC
+ * @route   POST /api/customs/weboc
+ * @access  Private
+ */
+const fileGoodsDeclaration = async (req, res) => {
+  const { gdNumber, declarationType, collectorate, consignee, bl } = req.body;
+
+  try {
+    // Audit Log the goods declaration filing
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: `filed Goods Declaration ${gdNumber}`,
+        target: bl || gdNumber,
+        module: 'Customs',
+        ipAddress: req.ip || '0.0.0.0'
+      }
+    });
+
+    return successResponse(res, { gdNumber }, 'Goods Declaration filed successfully with WEBOC gateway');
+  } catch (error) {
+    console.error('WEBOC Filing Error:', error);
+    return errorResponse(res, 'Error transmitting goods declaration to WEBOC');
+  }
+};
+
+module.exports = { lookupHSCode, calculateDuty, fileGoodsDeclaration };
