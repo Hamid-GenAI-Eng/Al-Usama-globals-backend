@@ -36,7 +36,7 @@ This is the backend API powering the [Al Usama Globals](https://al-usama-global.
 ---
 
 ## Project Structure
-
+```
 **Al-Usama-globals-backend/**
 ├── **api**/                    # Serverless API route handlers
 ├── **src**/                    # Core business logic
@@ -51,7 +51,7 @@ This is the backend API powering the [Al Usama Globals](https://al-usama-global.
 ├── **vercel_test_output.txt**  # Vercel deployment test results
 ├── **vercel.json**             # Vercel config
 └── **package.json**
-
+```
 ---
 
 ## Getting Started
